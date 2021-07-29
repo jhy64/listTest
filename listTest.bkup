@@ -1,0 +1,418 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include "listTest.h"
+
+static int maxNodes = 20;
+static int variance = 10;
+
+typedef enum { false, true } bool;
+
+typedef struct node {
+    struct node * next;
+    int value;
+} Node;
+
+/* same as */
+/*
+struct node {
+    struct node * next;
+    int value;
+} node;
+typedef struct node Node;
+*/
+
+/* Utilities */
+
+static Node * newNode( void ) {
+    Node *node;
+    node = (Node *)malloc(sizeof(Node));
+    node->next = 0;
+    node->value = rand() % variance;
+}
+
+static Node * newList( int num ){
+    Node * list = 0;
+    Node * cur = 0;
+    Node * head = 0;
+    int val = 0;
+    int i;
+
+    if( num == 0 ) {
+        return 0;
+    }
+    cur = newNode();
+    cur->next = 0;
+    head = cur;
+    list = cur;
+    for( i = 1; i < num; i++ ) {
+        cur = newNode();
+        list->next = cur;
+        list = cur;
+        
+    }   
+    return head;
+}
+
+static Node * newSortedList( int num ){
+    Node * list = 0;
+    Node * cur = 0;
+    Node * head = 0;
+    int val = 0;
+    int i;
+
+    if( num == 0 ) {
+        return 0;
+    }
+    cur = newNode();
+    head = cur;
+    list = cur;
+
+    for( i = 1; i < num; i++ ) {
+        cur = newNode();
+        cur->value = list->value + (rand() % variance);
+        list->next = cur;
+        list = cur;
+        
+    }   
+    return head;
+}
+
+static void showList( Node *a ) {
+    while( a ) {
+        printf( "%d ", a->value );
+        a = a->next;
+    }
+    printf("\n");
+}
+
+static void cleanList( Node *a ) {
+    Node * b;
+    while( a ) {
+        b = a;
+        a = a->next;
+        free( b );
+    }
+}
+
+/* Core Funcs */
+Node * bubbleSort( Node *list ) {
+    bool swapped = true;
+    Node *cur = list;
+    Node *prev, *dummy;
+    Node *temp;
+    int i = 0;
+
+    if( !list ) {
+        return list;
+    }
+    if( !list->next ) {
+        return list;
+    }
+    // create a dummy node for looping
+    dummy = newNode();
+    dummy->value = 0;
+    dummy->next = list;
+
+    while (swapped) {
+        swapped = false;
+        i++;
+        //printf( "\n[Bubble %d]\n", i );
+        //showList( dummy );
+        cur = dummy->next;
+        prev = dummy;
+        while( cur->next ) {
+            if( cur->value > cur->next->value ) {
+                temp = cur->next;
+                cur->next = temp->next;
+                prev->next = temp;
+                temp->next = cur;
+                cur = prev->next;
+                swapped = true;
+            } 
+            cur = cur->next;
+            prev = prev->next;
+            //showList( dummy );
+        }
+    }  
+    list = dummy->next;
+    free( dummy );
+    return list;
+}
+
+Node * insertNodeSorted( Node *list, Node *a ) {
+    Node *head = list;
+    if( !list ) return a;
+    if( !a ) return list;
+
+    // first element check
+    if( list->value >= a->value ) {
+        a->next = list;
+        list = a;
+        return list;
+    }
+
+    while( list->next ) {
+        if( list->next->value > a->value ){
+            a->next = list->next;
+            list->next = a;
+            return head;
+        }
+        list = list->next;
+    }
+    // a has the biggest value
+    list->next = a;
+    a->next = 0;
+    return head;
+}
+
+Node * mergeList( Node *a, Node *b ) {
+    Node *c, *head;
+    // init
+    if( !a || !b ) {
+        c = a ? a : b;
+        return c;
+    }
+
+    if( a->value < b->value ) {
+        c = a;
+        a = a->next;
+    } else {
+        c = b;
+        b = b->next;
+    }
+    head = c;
+    // iterate
+    while( a && b ) {
+        if( a->value < b->value ) {
+            c->next = a;
+            a = a->next;
+        } else {
+            c->next = b;
+            b = b->next;
+        }
+        c = c->next;
+    }
+    // clean
+    c->next = a ? a : b;
+    return head;
+}
+
+Node * recurseList( Node *cur, Node *prev ){
+    Node *head;
+    if( !cur->next ) {
+        cur->next = prev;
+        return cur;
+    } else {
+        head = recurseList( cur->next, cur );
+        cur->next = prev;
+    }
+    return head;
+}
+
+Node * reverseList2( Node *a ) {
+    Node *head;
+    if( !a ) {
+        return a;
+    }
+    if( !a->next ) {
+        return a;
+    }
+    head = recurseList( a->next, a );
+    a->next = 0;
+    return head;
+}
+
+Node * reverseList( Node *a ) {
+    Node *prev, *cur, *next;
+
+    // initial
+    if( !a ) return a;
+    if(!a->next ) return a;
+    
+    prev = a;
+    cur = a->next;
+    next = cur->next;
+    prev->next = 0;
+
+    // iterate
+    while( cur->next ) {
+        cur->next = prev;
+        prev = cur;
+        cur = next;
+        next = next->next;
+    }
+    // final
+    cur->next = prev;
+    return cur;
+}
+
+Node * sortList( Node *list ){
+    Node *sList = 0;
+    Node *node;
+
+    while( list ) {
+        node = list;
+        list = list->next;
+        node->next = 0;
+        sList = insertNodeSorted( sList, node );
+    }
+    return sList;
+}
+
+Node * rNthNode( Node *list, int *count ) {
+    Node *rList;
+    if( !list->next ) {
+        return list;
+    } else {
+        //printf("count = %d node.value=[%d]\n", *count, list->value);
+        rList = rNthNode( list->next, count );
+        if( *count ) {
+            *count = *count - 1;
+            return list;
+        } else {
+            return rList;
+        }
+    }
+}
+Node * nthToTheLast( Node *list, int n ) {
+    Node *node = 0;
+    // recurse to the last node
+    // than pop same node once count matches.
+    int count = n;
+    node = rNthNode( list, &count ); 
+    return node;
+}
+
+Node * nthToTheLast2( Node *list, int n ) {
+    Node *nth = list;
+    int i = 0;
+    if( !list ) {
+        return list;
+    }
+    for( i = 0; i < n; i++ ) {
+        list = list->next;
+        if( !list->next ) {
+            break;
+        }
+    }
+    while( list->next ) {
+        nth = nth->next;
+        list = list->next;
+    }
+    return nth;
+}
+
+/* Exported Funcs */
+
+void listMergeTest() {
+    Node *list1, *list2, *list3;
+    printf("\n[List Merge Test]\n");
+    list1 = newSortedList( rand() % maxNodes );
+    list2 = newSortedList( rand() % maxNodes );
+    printf("Before:\n");
+    showList( list1 );
+    showList( list2 );
+    list3 = mergeList( list1, list2 );
+    printf("After:\n");
+    showList( list3 );
+    cleanList( list3 );
+}
+
+void listReverseTest() {
+    printf("\n[List Reverse Test]\n");
+    Node *list1 = newList( rand() % (maxNodes*2) );
+    printf("Before:\n");
+    showList( list1 );
+    Node *list3 = reverseList( list1 );
+    printf("After:\n");
+    showList( list3 );
+    cleanList( list3 );
+}
+void listReverse2Test() {
+    printf("\n[List Reverse2 Test]\n");
+    Node *list1 = newList( rand() % (maxNodes*2) );
+    printf("Before:\n");
+    showList( list1 );
+    Node *list3 = reverseList2( list1 );
+    printf("After:\n");
+    showList( list3 );
+    cleanList( list3 );
+}
+
+void listInsertSortedTest() {
+    Node *list1=0;
+    Node *node;
+    int i;
+
+    printf("\n[List Insert Test]\n");
+    for( i = 0; i < maxNodes; i++ ) {
+        node = newNode();
+        list1 = insertNodeSorted( list1, node );
+    }
+    showList( list1 );
+    cleanList( list1 );
+}
+
+void listSortTest() {
+    Node *list1, *list2;
+    printf("\n[List Sort Test]\n");
+    list1 = newList( maxNodes );
+    printf("Before:\n");
+    showList( list1 );
+    list2 = sortList( list1 );
+    printf("After:\n");
+    showList( list2 );
+    cleanList( list2 );
+
+}
+
+void listNthElementTest() {
+    int i;
+    Node *list1, *node;
+    printf("\n[List nth to the last element test.]\n");
+    list1 = newList( maxNodes );
+    showList( list1 );
+    for( i = 0; i < maxNodes; i++ ) {
+        node = nthToTheLast( list1, i );
+        printf("[%dth to the last] = %d\n",i , node->value);
+    }
+}
+    
+void listNthElement2Test() {
+    int i;
+    Node *list1, *node;
+    printf("\n[List nth to the last element test2.]\n");
+    list1 = newList( maxNodes );
+    showList( list1 );
+    for( i = 0; i < maxNodes; i++ ) {
+        node = nthToTheLast2( list1, i );
+        printf("[%dth to the last] = %d\n",i , node->value);
+    }
+}
+
+void listBubbleSortTest() {
+    Node *list1, *list2;
+    printf("\n[List Bubble Sort Test]\n");
+    list1 = newList( maxNodes );
+    printf("Before:\n");
+    showList( list1 );
+    list2 = bubbleSort( list1 );
+    printf("After:\n");
+    showList( list2 );
+    cleanList( list2 );
+}
+
+void listTestAll() {
+   time_t t;
+   
+   /* Intializes random number generator */
+   srand((unsigned) time(&t));
+   listMergeTest();
+   listReverseTest();
+   listReverse2Test();
+   listInsertSortedTest();
+   listSortTest();
+   //listNthElementTest();
+   //listNthElement2Test();
+   listBubbleSortTest();
+}
