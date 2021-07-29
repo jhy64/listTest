@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "listTest.h"
+
+/* test */
 
 static int maxNodes = 20;
 static int variance = 10;
